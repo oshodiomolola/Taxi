@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sender</title>
+</head>
+<body style = "margin: 10px";>
+  <h1 style="text-align: center;">Sender App</h1>
+
+    <form id="signupForm" action="" style="margin:20px auto 40px;" >
+        <label for="name"><b>Username:</b></label>
+        <input id="name" type="text" name="name" placeholder="Enter your name..." style="padding: 5px;">
+
+        <button id="submitBtn" type="submit" style="background-color: rgb(233, 10, 233);color: white; border-radius: 5px; padding: 5px; border:2px solid gold;">Register</button>
+    </form>
+
+</body>
+
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
+<script>
+  const socket = io("http://localhost:3900")
+
+const signupForm = document.getElementById("signupForm")
+const Username = document.getElementById("name")
+
+signupForm.addEventListener("submit", (e)=> {
+  e.preventDefault()
+
+  localStorage.setItem(`senderId-${socket.id}`, `Sender ${Username.value}`);
+      socket.emit("join", "sender", `Sender ${Username.value}`);
+})
+</script>
+
+</html>
+
