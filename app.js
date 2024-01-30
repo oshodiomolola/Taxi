@@ -34,6 +34,11 @@ io.on("connection", (socket) => {
 
     orderingApp.joinSession(userInfo);
   });
+
+  socket.on("requestOrder", (data)=>{
+    orderingApp.requestOrder(data)
+})
+
 });
 
 PORT = 3900;

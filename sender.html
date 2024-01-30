@@ -1,37 +1,178 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sender</title>
-</head>
-<body style = "margin: 10px";>
-  <h1 style="text-align: center;">Sender App</h1>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sender</title>
+  </head>
+  <body style="margin: 10px" ;>
+    <h1 style="text-align: center">Sender App</h1>
 
-    <form id="signupForm" action="" style="margin:20px auto 40px;" >
-        <label for="name"><b>Username:</b></label>
-        <input id="name" type="text" name="name" placeholder="Enter your name..." style="padding: 5px;">
+    <form id="signupForm" action="" style="margin: 20px auto 40px">
+      <label for="name"><b>Username:</b></label>
+      <input
+        id="name"
+        type="text"
+        name="name"
+        placeholder="Enter your name..."
+        style="padding: 5px"
+      />
 
-        <button id="submitBtn" type="submit" style="background-color: rgb(233, 10, 233);color: white; border-radius: 5px; padding: 5px; border:2px solid gold;">Register</button>
+      <button
+        id="submitBtn"
+        type="submit"
+        style="
+          background-color: rgb(233, 10, 233);
+          color: white;
+          border-radius: 5px;
+          padding: 5px;
+          border: 2px solid whitesmoke;
+        "
+      >
+        Register
+      </button>
     </form>
 
-</body>
+    <form id="request_form" action="">
+      <div class="input-group mb-3">
+        <span class="input-group-text" id="inputGroup-sizing-default"
+          >Location</span
+        >
+        <input
+          required
+          type="text"
+          value=""
+          class="form-control"
+          aria-label="Sizing example input"
+          aria-describedby="inputGroup-sizing-default"
+        />
+      </div>
 
-<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+      <div class="input-group mb-3">
+        <span class="input-group-text" id="inputGroup-sizing-default"
+          >Destination</span
+        >
+        <input
+          required
+          type="text"
+          value=""
+          class="form-control"
+          aria-label="Sizing example input"
+          aria-describedby="inputGroup-sizing-default"
+        />
+      </div>
 
-<script>
-  const socket = io("http://localhost:3900")
+      <div class="input-group mb-3">
+        <span class="input-group-text" id="inputGroup-sizing-default"
+          >Price</span
+        >
+        <input
+          required
+          type="number"
+          value=""
+          class="form-control"
+          aria-label="Sizing example input"
+          aria-describedby="inputGroup-sizing-default"
+        />
+      </div>
 
-const signupForm = document.getElementById("signupForm")
-const Username = document.getElementById("name")
+      <input type="submit" class="btn btn-primary" value="Request" />
+    </form>
+    <label style="margin-top: 20px"><b>Notifications:</b></label>
+    <div
+      style="border: 1px solid lightgray; min-height: 60vh"
+      id="notification-container"
+    ></div>
+  </body>
 
-signupForm.addEventListener("submit", (e)=> {
-  e.preventDefault()
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 
-  localStorage.setItem(`senderId-${socket.id}`, `Sender ${Username.value}`);
+  <script>
+    const socket = io("http://localhost:3900");
+
+    const signupForm = document.getElementById("signupForm");
+    const Username = document.getElementById("name");
+    const requestForm = document.getElementById("request_form");
+
+    signupForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+
+      localStorage.setItem(`senderId-${socket.id}`, `Sender ${Username.value}`);
       socket.emit("join", "sender", `Sender ${Username.value}`);
-})
-</script>
+    });
 
+    requestForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+
+      const currentLocation = e.target[0].value;
+      const destination = e.target[1].value;
+      const price = e.target[2].value;
+
+      const senderId = localStorage.getItem(`sender-${socket.id}`);
+      socket.emit("requestOrder", {
+        currentLocation,
+        destination,
+        price,
+        senderId,
+      });
+    });
+
+    socket.on("orderAccepted", (data) => {
+      const div = document.createElement("div");
+
+      div.innerHTML = `<div style="margin: 10px;" class="card">
+            <h5 class="card-header">Order Request</h5>
+            <div class="card-body">
+                <h5 class="card-title">${data.order.driver.name} has accepted your ride</h5>
+                <p class="card-text">Status: ${data.order.status}</p>
+                <p class="card-text">Current Location: ${data.order.current_location}</p>
+                <p class="card-text">Destination: ${data.order.destination}</p>
+                <p class="card-text">Price: N${data.order.price}</p>
+            </div>
+            </div>`;
+
+      notificationContainer.appendChild(div);
+    });
+
+    socket.on("orderExpired", (data) => {
+      console.log(data);
+      const notificationContainer = document.getElementById(
+        "notification-container"
+      );
+
+      const div = document.createElement("div");
+      div.id = `${data.order.id}-expired-order`;
+
+      div.innerHTML = `<div style="margin: 10px;" class="card">
+        <h5 class="card-header">No Driver was found for your order request.</h5>
+        <div class="card-body">
+            <h5 class="card-title">Status: ${data.order.status}</h5>
+            <p class="card-text">Current Location: ${data.order.current_location}</p>
+            <p class="card-text">Destination: ${data.order.destination}</p>
+            <p class="card-text">Price: N${data.order.price}</p>
+        </div>
+        </div>`;
+
+      notificationContainer.appendChild(div);
+    });
+
+    socket.on("rideFinished", (data) => {
+      console.log(data);
+
+      const div = document.createElement("div");
+
+      div.innerHTML = `<div style="margin: 10px;" class="card">
+        <h5 class="card-header">Ride Finished</h5>
+        <div class="card-body">
+            <h5 class="card-title">Your ride with ${data.order.driver.name} has finished</h5>
+            <p class="card-text">Started from: ${data.order.current_location}</p>
+           
+            <p class="card-text">Ended in: ${data.order.destination}</p>
+            <p class="card-text">Cost of ride: N${data.order.price}</p>
+        </div>
+        </div>`;
+
+      notificationContainer.appendChild(div);
+    });
+  </script>
 </html>
-
